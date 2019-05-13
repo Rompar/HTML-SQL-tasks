@@ -1,0 +1,82 @@
+body	{background: lightgrey;
+		}
+table	{margin: auto;
+		width: 70%;
+		background: white;
+		padding-left: 15px;
+		padding-top: 15px;
+		padding-right: 3px;
+		}
+th		{background: grey; 
+		font: 170% book antiqua;
+		color: white;
+		}
+img 	{margin-bottom: -5px;
+		}
+h3 		{font: 90% book antiqua;
+		text-align: center;
+		text-decoration-color: white;
+		-moz-text-decoration-color: white;
+		padding: 10px;}
+h2 		{font: 140% book antiqua;
+		color: white; 
+		}
+a 		{font-family: book antiqua;
+		color: white
+		}
+form 	{background: steelblue;
+		width: 60%;
+		margin: auto;
+		font-family: book antiqua;
+		color: white}
+label	{float: left;
+		padding-right: 10px}
+
+
+.field		{text-align: right;
+			}
+.mfld		{float: left;}
+.mount1 	{background-image: url(img_0229.jpg);
+			background-size: cover;
+			background-position: center;
+			}
+.mount12 	{background: steelblue;
+		 	font-family: book antiqua;
+		 	color: white;
+		 	}
+.mount13 	{background: steelblue;
+			padding-right: 15px;
+			text-align: justify;
+		 	font-family: book antiqua;
+		 	color: white;
+		 	vertical-align: top;
+		 	}
+.llist1		{list-style: none;
+			}
+.llist2		{vertical-align: top;
+			text-align: justify;
+			font-family: book antiqua;
+			padding-left: 5px;
+			padding-top: 20px;
+			padding-right: 10px;
+			}
+.llist3		{font-family: book antiqua;
+			}			
+.trsp		{font: book antiqua 90%;
+			color: white;
+			width: 200px; 
+    		background: grey; 
+    		padding: 5px; 
+    		float: right; 
+    		position: relative; 
+    		top: 40px;
+    		left: -150px; 
+    		opacity: 0.7;
+			}
+.tbfoot		{background: grey;
+		 	font-family: book antiqua;
+		 	font-size: 0.75em;
+		 	color: white;
+		 	padding-top: 20px;}
+.pad1		{padding-left: 40px;}
+.pad2		{padding-left: 0px;}
