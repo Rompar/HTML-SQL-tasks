@@ -1,0 +1,860 @@
+--14
+
+SELECT maker, max(type) as type
+From Product
+Group BY maker
+HAVING COUNT(model)>1 AND COUNT(distinct type)=1
+
+--16
+SELECT DISTINCT a.model, b.model, a.speed, a.ram
+FROM pc a, pc b
+WHERE a.ram = b.ram
+AND a.speed = b.speed
+AND a.model > b.model
+
+--17
+SELECT distinct pr.type, lp.model, lp.speed
+FROM Laptop lp
+JOIN Product pr
+ON lp.model=pr.model
+WHERE lp.Speed < ALL (Select speed from PC)
+
+--18
+Select pr.maker, min(lpt.price)
+From Product pr
+Join Printer lpt
+on pr.model=lpt.model
+WHERE lpt.color='y'
+Group by pr.maker
+Having min(lpt.price)=(Select min(lpt.price)
+from Printer lpt
+WHERE lpt.color='y')
+
+--19
+SELECT Maker, COUNT(MOdel)
+FROM Product
+WHere type='PC'
+GROUP by Maker
+Having COUNT(MOdel)>=3
+
+
+--22
+Select distinct pr.maker
+From product pr
+Join PC pc
+on pr.model=pc.model
+WHERE pc.speed>=750
+
+INTERSECT
+
+SELECT distinct pr.maker
+From product pr
+Join Laptop lp
+on pr.model=lp.model
+WHERE lp.speed>=750
+
+--24 Представления
+with mprice as (
+Select pr.model, pr.type, pc.price 
+FROM product pr
+join PC pc
+on pr.model=pc.model
+UNION
+Select pr.model, pr.type, lp.price 
+FROM product pr
+join Laptop lp
+on pr.model=lp.model
+UNION
+Select pr.model, pr.type, lpt.price 
+FROM product pr
+join Printer lpt
+on pr.model=lpt.model)
+select model from mprice
+where price=(select max(price) from mprice)
+
+--25
+SELECT distinct pr.maker
+FROM Product pr
+WHERE pr.type='printer'
+AND pr.maker in (
+SELECT pr.maker
+From Product pr
+JOIN PC pc
+ON pr.model=pc.model
+WHERE pc.ram in (Select min(pc.ram) from PC)
+AND PC.speed in (select max(pc.speed) from PC
+                WHERE 
+      PC.ram in (Select min(pc.ram) from PC))
+)
+
+--26
+WITH avgprice as (
+SELECT pr.maker as mker, pc.price as price
+FROM Product pr
+JOIN PC pc
+ON pr.model=pc.model
+UNION ALL
+SELECT pr.maker as mker, lp.price as price
+FROM Product pr
+JOIN Laptop lp
+ON pr.model=lp.model)
+SELECT AVG(PRICE) from avgprice
+WHERE mker='A'
+
+With avgprice as (SELECT pr.maker as mker, pc.price as price
+FROM Product pr
+JOIN PC pc
+ON pr.model=pc.model
+WHERE pr.maker='A'
+UNION ALL
+SELECT pr.maker as mker, lp.price as price
+FROM Product pr
+JOIN Laptop lp
+ON pr.model=lp.model
+WHERE pr.maker='A')
+Select avg(price) from avgprice
+
+--27
+SELECT pr.maker, avg(pc.hd)
+from Product pr
+JOIN PC pc
+ON pr.model=pc.model
+WHERE pr.maker in (select pr.maker from Product pr 
+                   where pr.type='printer') 
+GROUP BY pr.maker
+
+
+--28
+with qtym (mkr, cmdl) as (
+Select maker, COUNT(model)
+From Product
+Group by maker
+having COUNT(model)=1)
+Select count(mkr) as qty
+from qtym
+
+--29
+Select ino.point, ino.date, SUM (ino.inc) as inc, SUM(ouo.out) as out
+FROM Income_o ino
+left JOIN Outcome_o ouo
+ON ino.point=ouo.point AND ino.date=OUO.date
+GROUP BY ino.point, ino.date
+UNION
+Select ouo.point, ouo.date, SUM (ino.inc) as inc, SUM(ouo.out) as out
+FROM Outcome_o ouo
+left JOIN Income_o ino
+ON ouo.point=ino.point AND ouo.date=ino.date
+GROUP BY ouo.point, ouo.date
+
+--30
+with HW30 (point, date, outcome, income) as (SELECT inc.point, inc.date, SUM (otc.out) as outcome, SUM(inc.inc) as income
+From INCOME inc
+LEFT JOIN Outcome otc
+ON inc.code=otc.code AND inc.point=otc.point AND inc.date=otc.date
+GROUP by inc.point, inc.date
+UNION 
+SELECT OTC.point, OTC.date, SUM (otc.out) as outcome, SUM(inc.inc) as income
+From Outcome otc
+LEFT JOIN Income inc
+ON otc.code=inc.code AND otc.point=inc.point AND otc.date=inc.date
+GROUP by otc.point, otc.date)
+SELECT point, date, SUM(outcome), sum(income)
+FROM HW30
+GROUP BY point, date
+
+--32
+SELECT c.country, CAST(avg(POWER (c.bore,3)/2) AS NUMERIC(6,2)) as weight
+FROM
+(
+SELECT s.class, s.name
+FROM Ships s
+UNION
+SELECT ship as 'class', o.ship
+FROM Outcomes o
+WHERE NOT EXISTS (SELECT * FROM Ships s WHERE s.name = o.ship)
+) s
+LEFT JOIN Classes c 
+ON (c.class = s.class) OR (c.class = s.name)
+WHERE c.country is not null
+
+GROUP BY c.country
+
+From OUTCOMES out
+Group by Country
+
+--35
+like '[0-9]' - любая цифра
+like '[a-z]' - любая буква англ. мал.
+like '[^0-9]' - любой символ, кроме цифры
+like '%[^0-9]%' - любой символ, кроме цифры, находящийся в любом месте
+not like '%[^0-9]%' - в строке не должен найтись любой символ, кроме цифры, находящийся в любом месте
+
+
+SELECT model,type
+From Product
+WHERE model not like '%[^0-9]%' or 
+model not like '%[^a-z]%'
+
+--36
+SELECT distinct c.class
+FROM
+(
+SELECT s.class, s.name
+FROM Ships s
+UNION
+SELECT o.ship as 'class', o.ship
+FROM Outcomes o
+WHERE NOT EXISTS (SELECT * FROM Ships s WHERE s.name = o.ship)
+) s
+JOIN Classes c 
+ON (c.class = s.class) AND (c.class = s.name)
+
+--37
+Select ttl.class
+FROM
+(Select c.class, o.SHIp
+FROM Classes c
+JOIN Outcomes o
+ON c.class=o.ship
+UNION
+Select c.class, s.name
+FROM Classes c
+join ships s
+ON c.class=s.class) ttl
+GROUP BY ttl.class
+HAVING count (ttl.ship)=1
+
+--38
+Select distinct COUNTRY
+from classes
+WHERE type='bb' 
+INTERSECT
+Select distinct COUNTRY
+from classes
+WHERE type='bc'
+
+--39
+SELECT distinct o.ship
+FROM outcomes o
+LEFT JOIN Battles b 
+ON b.name=o.battle
+WHERE o.result='damaged'
+and EXISTS 
+(
+SELECT otc.ship
+FROM outcomes otc
+LEFT JOIN Battles btl 
+ON btl.name=otc.battle
+WHERE otc.ship=o.ship
+and btl.date > b.date
+)
+
+--41
+
+Select 'model' as 'chr', model as 'value'
+FROM PC
+WHERE code=(SELECT max(code) From PC)
+UNION
+Select 'cd', cd 
+FROM PC
+WHERE code=(SELECT max(code) From PC)
+UNION
+Select 'speed', cast (speed as varchar(10))
+FROM PC
+WHERE code=(SELECT max(code) From PC)
+UNION
+Select 'ram', cast (ram as varchar(10))
+FROM PC
+WHERE code=(SELECT max(code) From PC)
+UNION
+Select 'hd', cast (hd as varchar(10))
+FROM PC
+WHERE code=(SELECT max(code) From PC)
+UNION
+Select 'price', cast (price as varchar(10))
+FROM PC
+WHERE code=(SELECT max(code) From PC)
+
+--43 обращаем вн на типы данных
+SELECT distinct b.name 
+From Battles b, Ships s
+WHERE DATEpart(yy, b.date)!=s.launched
+except
+SELECT distinct b.name 
+From Battles b, Ships s
+WHERE DATEpart(yy, b.date)=s.launched
+
+--45 шаблон для пробелов
+Select un.name from
+(SELECT name
+from Ships
+UNION
+SELECT ship 
+FROM OUTCOmes) as un
+Where un.name like '% % %'
+
+--46 проверка на классы после юнион
+select s.name, c.displacement, c. numGuns
+from outcomes o
+JOIN ships s
+on o.ship=s.name
+join classes c
+on c.class=s.class 
+where battle='Guadalcanal'
+union
+select o.ship, c.displacement, c.numGuns
+from outcomes
+left join classes c
+on o.ship=c.class
+where battle='Guadalcanal'
+and o.ship not in (select s.name from ships s)
+
+--47
+SELECT count(*) 
+OVER (order by c.countM DESC, c.maker,c.model) AS no, c.maker, c.model
+FROM (SELECT count(*) OVER(partition by maker) countM, maker, model
+      FROM product) c
+	  
+SELECT N = ROW_NUMBER() OVER (ORDER BY Q DESC, MAKER ASC, MODEL ASC), MAKER, MODEL
+FROM
+(
+  SELECT MAKER, MODEL, Q = COUNT(*) OVER (PARTITION BY MAKER)
+  FROM PRODUCT
+) T
+
+
+А если требуется пронумеровать рейсы для каждой компании отдельно? 
+Для этого нам потребуется еще одна конструкция в предложении OVER - PARTITION BY.
+
+Конструкция PARTITION BY задает группы строк, для которых выполняется 
+независимая нумерация. Группа определяется равенством значений в списке столбцов, 
+перечисленных в этой конструкции, у строк, составляющих группу.
+
+--48
+SELECT s.class
+From Outcomes o
+join Ships s
+ON o.ship=s.name
+WHERE o.result='sunk'
+UNION
+SELECT c.class
+From Outcomes o
+JOIN Classes c
+ON o.ship=c.class
+WHERE o.result='sunk'
+
+--49
+SELECT o.ship
+FROM Outcomes o
+JOIN classes c
+on o.ship=c.class
+WHERE c.bore=16
+UNION
+SELECT s.name
+FROM Ships s
+JOIN Classes c
+ON s.class=c.class
+WHERE c.bore=16
+
+--51
+SELECT ship from
+(SELECT o.ship ship, c.displacement disp, c.numGuns gun
+FROM Outcomes o
+JOIN Classes c
+ON o.ship=c.class
+UNION
+SELECT s.name, c.displacement, c.numGuns
+FROM Ships s
+JOIN Classes c
+ON s.class=c.class) as dtsh
+
+JOIN
+
+(SELECT COUNT(ship) as csh, max(gun) as mg, disp
+FROM 
+(SELECT o.ship ship, c.displacement disp, c.numGuns gun
+FROM Outcomes o
+JOIN Classes c
+ON o.ship=c.class
+UNION
+SELECT s.name, c.displacement, c.numGuns
+FROM Ships s
+JOIN Classes c
+ON s.class=c.class) as dtsh
+GROUP by disp) as res
+
+ON dtsh.disp=res.disp and dtsh.gun=res.mg
+
+--52 Проверка на нулевые значения когда стоит вопрос могут!!!- иначе не нужна. Определить названия всех 
+-- кораблей из таблицы Ships, которые могут быть !!!! (не есть) линейным японским кораблем,
+-- имеющим число главных орудий не менее девяти, калибр орудий менее 19 дюймов 
+-- и водоизмещение не более 65 тыс.тонн
+SELECT distinct s.name
+FROM Ships s
+JOIN Classes c
+ON s.class=c.class
+WHERE c.type='bb' 
+and c.Country='Japan' 
+and (c.bore<19 or c.bore is NULL)
+AND (c.displacement<=
+65000 or c.displacement is NULL)
+AND (c.numguns>=9 or c.numGuns is NULL)
+
+--53 не округление и кастование в числовые типы а ИМЕННО в символьное представление.
+SELECT STR(AVG(numguns*1.0), 5,2) as avggn
+FROM Classes
+WHERE type='bb'
+
+--54
+WITH bbs AS 
+(SElECT s.name, s.class, c.type, c.numguns 
+FROM SHips s
+JOIN Classes c
+ON s.class=c.class
+WHERE c.type='bb'
+
+UNION
+
+SELECT o.ship, c.class, c.type, c.numguns
+FROM Outcomes o
+JOIN Classes c
+ON o.ship=c.class
+WHERE c.type='bb')
+
+SELECT STR(AVG(numguns*1.0), 5,2) as AVG_numGuns
+FROM bbs
+
+--55
+SELECT c.class, r.year
+FROM Classes c
+LEFT JOIN
+(SELECT class, MIN(launched) AS year
+FROM ships
+GROUP BY class) as r
+ON c.class=r.class
+
+--56
+SELECT c.class, count(r.ship) as sunks
+FROM Classes c
+LEFT JOIN
+(SELECT o.ship, s.class
+FROM outcomes o
+left JOIN Ships s
+ON o.ship=s.name
+WHERE result='sunk'
+UNION
+SELECT o.ship, c.class
+FROM outcomes o
+join Classes c
+ON o.ship=c.class
+Where result='sunk') as r
+ON c.class=r.class
+GROUP BY c.class
+
+--57
+SELECT res.class, res.sunks
+FROM
+(SELECT c.class, count(r.ship) as sunks
+FROM Classes c
+LEFT JOIN
+(SELECT o.ship, s.class
+FROM outcomes o
+left JOIN Ships s
+ON o.ship=s.name
+WHERE result='sunk'
+UNION
+SELECT o.ship, c.class
+FROM outcomes o
+join Classes c
+ON o.ship=c.class
+Where result='sunk') as r
+ON c.class=r.class
+GROUP BY c.Class) as res
+
+JOIN
+
+(SELECT rn.class, count(rn.ship) AS csh
+FRom
+(SElect distinct o.ship, s.class
+from Outcomes o
+LEFT JOIN ships s
+ON o.ship=s.name
+UNION 
+SELECT s.name, s.class
+FROM SHips s
+UNION
+SELECT o.ship, c.class
+FROM Outcomes o
+JOIN Classes c
+ON o.ship=c.class) AS rn
+GROUP by rn.class) AS res1
+
+on res.class=res1.class
+WHERE res1.csh>=3 AND res.sunks>0
+
+--58
+WITH res as (
+SELECT distinct a.maker, b.type, c.tm,
+
+case 
+WHEN cm IS NULL
+THEN 0
+ELSE cast (cm as char(15))
+END cm
+
+FROM Product a
+CROSS JOIN
+Product b
+JOIN
+(select maker, COUNT(model) tm from product group by maker) c
+ON a.maker=c.maker
+left join
+(select maker, type, count (model) cm from product group by maker, type) d
+ON a.maker=d.maker and b.type=d.type)
+
+SELECT res.maker, res.type, CAST (100*cm*1.0/tm AS NUMERIC (5,2)) as prc
+FROM res
+
+--59
+WITH res AS
+(SELECT i.point, i.date, i.inc,
+CASE 
+WHEN out is NULL
+THEN '0'
+ELSE CAST (out as varchar (15))
+END out
+
+FROM INCome_o i
+left JOIN OUTCOME_o o
+ON i.point=o.point and i.date=o.date
+
+UNION
+
+SELECT o.point, o.date, 
+
+CASE 
+WHEN inc is NULL
+THEN '0'
+ELSE CAST (inc as varchar (15))
+END inc,
+o.out
+
+FROM OUTCOME_o o
+left JOIN INCome_o i
+ON o.point=i.point and o.date=i.date)
+
+SELECT res.Point, SUM(inc)-SUM(OUT)
+FROM RES
+GROUP BY Point
+
+--60
+WITH res AS
+(SELECT i.point, i.date, i.inc,
+CASE 
+WHEN out is NULL
+THEN '0'
+ELSE CAST (out as varchar (15))
+END out
+
+FROM INCome_o i
+left JOIN OUTCOME_o o
+ON i.point=o.point and i.date=o.date
+WHERE i.Date<'2001-04-15'
+
+UNION
+
+SELECT o.point, o.date, 
+
+CASE 
+WHEN inc is NULL
+THEN '0'
+ELSE CAST (inc as varchar (15))
+END inc,
+o.out
+
+FROM OUTCOME_o o
+left JOIN INCome_o i
+ON o.point=i.point and o.date=i.date
+WHERE o.Date<'2001-04-15')
+
+SELECT res.Point, SUM(inc)-SUM(OUT)
+FROM RES
+GROUP BY Point
+
+--61
+WITH res AS
+(SELECT i.point, i.date, i.inc,
+CASE 
+WHEN out is NULL
+THEN '0'
+ELSE CAST (out as varchar (15))
+END out
+
+FROM INCome_o i
+left JOIN OUTCOME_o o
+ON i.point=o.point and i.date=o.date
+
+UNION
+
+SELECT o.point, o.date, 
+
+CASE 
+WHEN inc is NULL
+THEN '0'
+ELSE CAST (inc as varchar (15))
+END inc,
+o.out
+
+FROM OUTCOME_o o
+left JOIN INCome_o i
+ON o.point=i.point and o.date=i.date
+) 
+
+SELECT (SUM(inc)-SUM(OUT)) as remain
+FROM RES
+
+--63
+SELECT name  
+from Passenger
+WHERE id_psg in (
+SElect Id_psg 
+from pass_in_trip
+Group by ID_PSG, place
+Having count(place)>1)
+
+--64
+SELECT i.point as point, i.date as date,
+CASE 
+WHEN o.code is NULL
+THEN 'inc'
+ELSE 'out'
+END 
+as operation,  SUM(i.inc) as money_sum
+
+FROM INCOMe i
+left join OUTCOME o
+ON i.date=o.date and i.point=o.point
+WHERE o.code is NULL
+
+GROUP by i.point, i.date, o.code
+
+UNION
+
+SELECT o.point as point, o.date as date,
+CASE 
+WHEN i.code is NULL
+THEN 'out'
+ELSE 'inc'
+END 
+as operation, SUM(o.out) as money_sum
+
+FROM OUTCOME o
+left join Income i
+ON i.date=o.date and i.point=o.point
+WHERE i.code is null
+
+GROUP by o.point, o.date, i.code
+
+--65
+WITH res as(
+Select distinct
+case 
+WHEN type='PC' 
+then 1
+WHEN type='Laptop' and maker not in (select maker from Product
+Where type='PC')
+Then 2
+WHEn type='Printer' and maker not in (select maker from Product
+Where type='PC') and maker not in (select maker from Product
+Where type='Laptop')
+THEN 3
+ELSE 4
+
+END as n, maker, type
+From Product
+)
+
+Select row_number() Over (order by maker) num,
+case
+When type='PC' and n=1
+Then maker
+when type='Laptop' and n=2
+then maker
+when type='Printer' and n=3
+Then maker
+Else ' '
+End maker
+, type
+From res
+
+--66
+
+with clnd (dt) as 
+(select convert(datetime, '2003-04-01') 
+union all 
+select dateadd(day, 1, dt) from clnd where dt<'2003-04-07 00:00:00')
+
+select dt, coalesce(resr.cnt, 0)
+from clnd
+-- Добавляет нужное количество дней к указанному первым
+
+left join 
+
+(select date, count(trn) as cnt from
+(
+select distinct p.date, p.trip_no as trn 
+from Pass_in_trip p
+join trip t 
+on t.trip_no=p.trip_no 
+Where t.town_from='Rostov') alr
+ 
+group by date) resr
+-- считает ВСЕ рейсы из ростова за ВСЁ время
+ 
+ -- 67
+ WITH res AS 
+(SELECT COUNT(trip_no) AS ctr, town_from, town_to 
+FROM trip 
+GROUP BY town_from, town_to)
+SELECT COUNT(ctr) AS qty
+FROM res
+WHERE ctr = (SELECT MAX(ctr) FROM res)
+
+
+select count(*) from
+(SELECT TOP 1 WITH TIES count(*) c, town_from, town_to from trip
+group by town_from, town_to
+order by c desc) as t
+ 
+ With res (qty) as 
+(SElect count (trip_no) 
+from trip
+Group by town_from, town_to)
+Select max (qty) as qty
+From res
+ 
+-- 68
+with res as (select town_from, town_to, count (*) cnt
+              from     
+                   (Select town_from, town_to, trip_no
+                   from Trip 
+                   Union all 
+                   Select town_to, town_from,  trip_no
+                   from Trip ) tab1
+              group by town_from, town_to
+              )
+
+select count (*)/2 -- потому что знаем что М-Р и Р-М один и тот же маршрут
+from res
+where cnt = (select max(cnt) from res)
+
+--69
+with a as
+(Select point, date, sum(inc) inc
+From income
+Group by point, date),
+
+b as 
+(select point, date, sum(out) out
+From outcome
+Group by point, date),
+
+c as
+(select a.point, a.date, a.inc, coalesce(b.out, 0) out
+from a
+left join b
+on a.point=b.point and a.date=b.date
+union
+select b.point, b.date, coalesce(a.inc, 0), b.out
+from b
+left join a
+on b.point=a.point and b.date=a.date),
+
+d as 
+(select c.point, c.date, (c.inc-c.out) as r
+from c)
+
+Select d.point, CONVERT(varchar(12), date, 103) day,
+(SELECT SUM(d1.r) 
+   FROM d d1
+   WHERE d1.date <= d.date and d1.point=d.point) rem
+from d
+
+--70
+with res as
+(select o.battle, c.country, count(o.ship) cnt
+from outcomes o
+left join ships s
+on o.ship=s.name
+left join classes c
+on o.ship=c.class or s.class=c.class
+Group by o.battle, c.country)
+
+select distinct res.battle bat
+from res
+where res.cnt>=3 and res.country is not NULL
+
+--71
+with res as 
+(select pr.maker, count(pr.model) cnt
+from Product pr
+where pr.type='PC'
+group by pr.maker
+except
+select pr.maker, count(distinct p.model)
+from pc p
+join product pr
+on p.model=pr.model
+where pr.type='PC'
+group by pr.maker)
+
+Select distinct pr.maker from product pr
+Where pr.maker not in (select res.maker from res) and type='PC'
+
+--72
+
+with res as(
+Select pit.ID_psg, count(pit.trip_no) as cnt from Pass_in_trip pit
+join Trip t on pit.trip_no=t.trip_no
+group by pit.ID_psg
+having count(distinct ID_comp)=1)
+
+Select p.name, res.cnt 
+from Passenger p
+join res on p.ID_psg=res.ID_psg
+where cnt=(select max(cnt) from res)
+
+--73
+select o.ship, c.country, b.name
+from battles b
+left join outcomes o
+on b.name=o.battle
+left join ships s
+on o.ship=s.name
+left join classes c
+on c.class=s.class or o.ship=c.class
+
+
+--80
+SELECT distinct p.maker from
+product p
+EXCEPt
+SELECT distinct res.maker from 
+(SELECT p.maker, p.model 
+from Product p 
+Where type='PC'
+except
+SELECT p.maker, c.model 
+from Product p
+Join PC c
+on p.model=c.model) res
+
+
+
+
+
+
+
+
+
+73
