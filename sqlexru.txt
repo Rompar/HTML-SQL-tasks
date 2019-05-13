@@ -1,3 +1,4 @@
+-- The most interesting tasks of sql-ex.ru
 --14
 
 SELECT maker, max(type) as type
